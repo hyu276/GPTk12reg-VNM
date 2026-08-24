@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatGPT Register K12</title>
+    <link rel="stylesheet" href="/static/style.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>ChatGPT Register K12</h1>
+          <p id="health">Đang kết nối...</p>
+        </div>
+        <button id="refreshJobs" type="button">Làm mới</button>
+      </header>
+
+      <section class="grid">
+        <form id="configForm" class="panel">
+          <h2>Cấu hình</h2>
+          <label>Tệp cấu hình <input name="config_path" value="config.yaml"></label>
+          <label>Workspace ID (mỗi dòng một ID) <textarea name="workspace_ids" rows="3" spellcheck="false" placeholder="workspace uuid&#10;workspace uuid"></textarea></label>
+          <label>Proxy <input name="proxy_url" placeholder="socks5://127.0.0.1:7897"></label>
+          <label>Định dạng xuất
+            <select name="export_format">
+              <option value="sub2api" selected>Sub2API (mặc định)</option>
+              <option value="auth">auth.json</option>
+              <option value="raw-session">Session JSON</option>
+              <option value="cpa">CPA</option>
+              <option value="cockpit">Cockpit</option>
+              <option value="9router">9router</option>
+              <option value="axonhub">AxonHub</option>
+            </select>
+          </label>
+          <div class="row">
+            <label>Số lượng <input name="count" type="number" min="1" value="10"></label>
+            <label>Số luồng <input name="threads" type="number" min="1" value="2"></label>
+            <div class="alias-settings">
+              <label>Giới hạn bí danh <input name="alias_limit_per_mailbox" type="number" min="1" max="6" value="5"></label>
+              <label class="switch compact-switch"><span>Tên bí danh tùy chỉnh</span><input name="alias_custom_name_enabled" type="checkbox"></label>
+            </div>
+          </div>
+          <label class="switch"><span>Bật bí danh email</span><input name="alias_enabled" type="checkbox" checked></label>
+          <section class="alias-custom-panel" data-alias-custom-panel hidden>
+            <label>Tên bí danh tùy chỉnh
+              <textarea name="alias_custom_names" rows="3" spellcheck="false" placeholder="alpha&#10;beta&#10;team01"></textarea>
+            </label>
+            <p class="hint">Mỗi dòng một tag, tạo địa chỉ dạng user+tag@example.com. Địa chỉ chính tính là một vị trí, tối đa 6 địa chỉ; nếu chưa đủ sẽ bổ sung +1, +2.</p>
+          </section>
+
+          <fieldset class="provider-switch">
+            <legend>Loại hộp thư</legend>
+            <label>
+              <input name="mail_provider" type="radio" value="outlook" checked>
+              <span>Outlook Token</span>
+            </label>
+            <label>
+              <input name="mail_provider" type="radio" value="gmail">
+              <span>Gmail App Password</span>
+            </label>
+          </fieldset>
+
+          <section class="provider-panel" data-provider-panel="outlook">
+            <h3>Nhóm hộp thư Outlook</h3>
+            <p class="hint">Định dạng: email----mật_khẩu_email----client_id----refresh_token, mỗi dòng một tài khoản.</p>
+            <textarea name="outlook_mailboxes" rows="8" spellcheck="false" placeholder="user@example.com----password----client_id----refresh_token"></textarea>
+          </section>
+
+          <section class="provider-panel" data-provider-panel="gmail" hidden>
+            <h3>Nhóm hộp thư Gmail</h3>
+            <p class="hint">Định dạng: Gmail----App Password 16 ký tự, mỗi dòng một tài khoản. Có thể giữ hoặc bỏ khoảng trắng trong App Password.</p>
+            <textarea name="gmail_mailboxes" rows="8" spellcheck="false" placeholder="user@gmail.com----abcd efgh ijkl mnop"></textarea>
+          </section>
+          <div class="actions">
+            <button type="button" data-action="save-config">Lưu cấu hình</button>
+            <button type="button" data-action="preview">Xem trước ứng viên</button>
+          </div>
+        </form>
+
+        <section class="panel">
+          <h2>Chọn nguồn tài khoản</h2>
+          <p class="hint">Cả hai chế độ đều tham gia Workspace, làm mới/kiểm tra token và xuất JSON theo định dạng đã chọn.</p>
+          <div class="mode-list" role="radiogroup" aria-label="Chế độ tác vụ">
+            <label class="mode-option">
+              <input name="job_mode" type="radio" value="run" checked>
+              <span>
+                <strong>Đăng ký tài khoản mới</strong>
+                <small>Email chưa đăng ký ChatGPT: tạo tài khoản từ nhóm hộp thư/bí danh rồi xuất dữ liệu.</small>
+              </span>
+            </label>
+            <label class="mode-option">
+              <input name="job_mode" type="radio" value="existing-token">
+              <span>
+                <strong>Đăng nhập tài khoản hiện có để lấy token mới</strong>
+                <small>Email đã có tài khoản ChatGPT hoặc token cũ lỗi 401: đăng nhập bằng mã xác minh rồi xuất token mới.</small>
+              </span>
+            </label>
+          </div>
+          <div class="job-controls">
+            <button id="startSelectedJob" class="primary-action" type="button">Bắt đầu toàn bộ quy trình</button>
+            <button id="cancelJob" class="secondary danger" type="button" disabled>Dừng tác vụ hiện tại</button>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel status">
+        <h2>Tác vụ hiện tại</h2>
+        <pre id="jobStatus">{}</pre>
+      </section>
+
+      <section class="panel">
+        <h2>Nhật ký</h2>
+        <pre id="logs" class="logs"></pre>
+      </section>
+
+      <section class="panel">
+        <h2>Terminal</h2>
+        <div class="terminal-input">
+          <input id="terminalCommand" spellcheck="false" placeholder="python -m chatgpt_register_k12.cli --help">
+          <button id="runTerminal" type="button">Chạy</button>
+        </div>
+        <pre id="terminalOutput" class="terminal"></pre>
+      </section>
+    </main>
+    <script src="/static/app.js?v=20260706-vi"></script>
+  </body>
+</html>
