@@ -77,3 +77,5 @@ jobs:
           git add -A
           git commit -m "chore: Import upstream source for localization"
           git push -u origin feat/vietnamese-localization
+
+# Trigger bootstrap after workflow creation.
